@@ -1,131 +1,187 @@
-from flask import Flask, render_template, request, jsonify
+# juegos.py
+import tkinter as tk
+from tkinter import messagebox, simpledialog
 import random
 
-# Clase para el juego Triki
-class Triki:
-    def _init_(self):
-        self.turn = "X"
-        self.board = [["" for _ in range(3)] for _ in range(3)]
 
-    def mark_cell(self, i, j):
-        if self.board[i][j] == "":
-            self.board[i][j] = self.turn
+class Triki:
+    def __init__(self, root):
+        self.root = root
+        self.turn = 'X'
+        self.board = ['' for _ in range(9)]
+        self.buttons = []
+
+        self.create_board()
+
+    def create_board(self):
+        for i in range(9):
+            button = tk.Button(self.root, text='', font=('Arial', 20), width=5, height=2,
+                               command=lambda i=i: self.on_click(i))
+            button.grid(row=i // 3, column=i % 3)
+            self.buttons.append(button)
+
+    def on_click(self, index):
+        if self.board[index] == '':
+            self.board[index] = self.turn
+            self.buttons[index].config(text=self.turn)
             if self.check_winner():
-                return f"¡{self.turn} ha ganado!"
-            elif self.check_draw():
-                return "¡Es un empate!"
+                messagebox.showinfo("Triki", f"¡El jugador {self.turn} ha ganado!")
+                self.reset_game()
+            elif '' not in self.board:
+                messagebox.showinfo("Triki", "¡Es un empate!")
+                self.reset_game()
             else:
-                self.turn = "O" if self.turn == "X" else "X"
-                return f"Turno de: {self.turn}"
-        return "Celda ocupada."
+                self.turn = 'O' if self.turn == 'X' else 'X'
 
     def check_winner(self):
-        for i in range(3):
-            if self.board[i][0] == self.board[i][1] == self.board[i][2] != "":
+        winning_combinations = [(0, 1, 2), (3, 4, 5), (6, 7, 8),
+                                (0, 3, 6), (1, 4, 7), (2, 5, 8),
+                                (0, 4, 8), (2, 4, 6)]
+        for combo in winning_combinations:
+            if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != '':
                 return True
-            if self.board[0][i] == self.board[1][i] == self.board[2][i] != "":
-                return True
-        if self.board[0][0] == self.board[1][1] == self.board[2][2] != "":
-            return True
-        if self.board[0][2] == self.board[1][1] == self.board[2][0] != "":
-            return True
         return False
 
-    def check_draw(self):
-        return all(cell != "" for row in self.board for cell in row)
-
     def reset_game(self):
-        self.turn = "X"
-        self.board = [["" for _ in range(3)] for _ in range(3)]
+        self.turn = 'X'
+        self.board = ['' for _ in range(9)]
+        for button in self.buttons:
+            button.config(text='')
 
-    def display_board(self):
-        for row in self.board:
-            print(" | ".join(cell if cell else " " for cell in row))
-            print("-" * 9)
 
-# Clase para el juego Adivina el Número
+class Serpiente:
+    def __init__(self, root):
+        self.root = root
+        self.canvas = tk.Canvas(self.root, width=300, height=300, bg="black")
+        self.canvas.pack()
+
+        # Inicialización de la serpiente
+        self.snake = [(140, 140), (130, 140), (120, 140)]
+        self.direction = 'Right'
+
+        # Posición inicial de la comida
+        self.food = self.create_food()
+
+        self.move_snake()
+        self.root.bind("<KeyPress>", self.change_direction)
+
+    def create_food(self):
+        x = random.randint(0, 29) * 10
+        y = random.randint(0, 29) * 10
+        return (x, y)
+
+    def change_direction(self, event):
+        new_direction = event.keysym
+        all_directions = {'Left', 'Right', 'Up', 'Down'}
+        opposite_directions = {('Left', 'Right'), ('Right', 'Left'), ('Up', 'Down'), ('Down', 'Up')}
+
+        if new_direction in all_directions and (self.direction, new_direction) not in opposite_directions:
+            self.direction = new_direction
+
+    def move_snake(self):
+        head_x, head_y = self.snake[0]
+
+        if self.direction == 'Left':
+            head_x -= 10
+        elif self.direction == 'Right':
+            head_x += 10
+        elif self.direction == 'Up':
+            head_y -= 10
+        elif self.direction == 'Down':
+            head_y += 10
+
+        new_head = (head_x, head_y)
+
+        if new_head == self.food:
+            self.food = self.create_food()
+        else:
+            self.snake.pop()  # Quitar el último segmento de la serpiente
+
+        if (head_x < 0 or head_x >= 300 or head_y < 0 or head_y >= 300 or new_head in self.snake):
+            messagebox.showinfo("Serpiente", "¡Perdiste!")
+            self.root.quit()
+            return
+
+        self.snake.insert(0, new_head)
+        self.update_canvas()
+        self.root.after(100, self.move_snake)
+
+    def update_canvas(self):
+        self.canvas.delete("all")
+        for segment in self.snake:
+            self.canvas.create_rectangle(segment[0], segment[1], segment[0] + 10, segment[1] + 10, fill="green")
+        self.canvas.create_oval(self.food[0], self.food[1], self.food[0] + 10, self.food[1] + 10, fill="red")
+
+
 class AdivinaNumero:
-    def _init_(self):
-        self.number_to_guess = random.randint(1, 100)
-        self.guesses = 0
+    def __init__(self, root):
+        self.root = root
+        self.target_number = random.randint(1, 100)
+        self.prompt_guess()
+
+    def prompt_guess(self):
+        guess = simpledialog.askinteger("Adivina el Número", "Adivina un número entre 1 y 100:")
+        if guess is not None:
+            self.check_guess(guess)
 
     def check_guess(self, guess):
-        self.guesses += 1
-        if guess < self.number_to_guess:
-            return "Demasiado bajo!"
-        elif guess > self.number_to_guess:
-            return "Demasiado alto!"
+        if guess < self.target_number:
+            messagebox.showinfo("Resultado", "Demasiado bajo. ¡Inténtalo de nuevo!")
+            self.prompt_guess()
+        elif guess > self.target_number:
+            messagebox.showinfo("Resultado", "Demasiado alto. ¡Inténtalo de nuevo!")
+            self.prompt_guess()
         else:
-            return f"¡Correcto! Adivinaste en {self.guesses} intentos."
+            messagebox.showinfo("Resultado", "¡Felicidades! Adivinaste el número.")
 
-# Clase para el juego Piedra, Papel o Tijeras
+
 class PiedraPapelTijeras:
-    def jugar(self, user_choice):
-        choices = ["Piedra", "Papel", "Tijeras"]
-        computer_choice = random.choice(choices)
-        return self.determine_winner(user_choice, computer_choice), computer_choice
+    def __init__(self, root):
+        self.root = root
+        self.options = ["Piedra", "Papel", "Tijeras"]
+        self.play_game()
 
-    def determine_winner(self, user, computer):
-        if user == computer:
-            return "Es un empate!"
-        elif (user == "Piedra" and computer == "Tijeras") or \
-                (user == "Papel" and computer == "Piedra") or \
-                (user == "Tijeras" and computer == "Papel"):
-            return "¡Ganaste!"
+    def play_game(self):
+        player_choice = simpledialog.askstring("Piedra, Papel o Tijeras", "Elige: Piedra, Papel o Tijeras")
+        if player_choice is None:
+            return
+        computer_choice = random.choice(self.options)
+        self.determine_winner(player_choice, computer_choice)
+
+    def determine_winner(self, player, computer):
+        if player == computer:
+            result = "Empate"
+        elif (player == "Piedra" and computer == "Tijeras") or \
+                (player == "Papel" and computer == "Piedra") or \
+                (player == "Tijeras" and computer == "Papel"):
+            result = "¡Ganaste!"
         else:
-            return "¡La máquina gana!"
+            result = "Perdiste"
 
-# Clase principal del menú de juegos
-def main():
-    print("Bienvenido al Casino de Juegos")
-    user_name = input("Por favor, ingresa tu nombre: ")
-    
-    while True:
-        print(f"\nHola, {user_name}! ¿Te gustaría jugar?")
-        choice = input("Escribe 'sí' para jugar o 'no' para salir: ").strip().lower()
-        
-        if choice == 'no':
-            print("¡Gracias por jugar!")
-            break
-        elif choice == 'sí':
-            print("\nSelecciona un juego:")
-            print("1. Triki")
-            print("2. Adivina el Número")
-            print("3. Piedra, Papel o Tijeras")
-            print("4. Salir")
-            game_choice = input("Selecciona un juego (1-4): ")
-            
-            if game_choice == '1':
-                game = Triki()
-                while True:
-                    game.display_board()
-                    row = int(input(f"Turno de {game.turn}. Elige la fila (0, 1, 2): "))
-                    col = int(input(f"Elige la columna (0, 1, 2): "))
-                    result = game.mark_cell(row, col)
-                    if result:
-                        game.display_board()
-                        print(result)
-                        break
-            elif game_choice == '2':
-                game = AdivinaNumero()
-                while True:
-                    guess = int(input("Adivina un número entre 1 y 100: "))
-                    result = game.check_guess(guess)
-                    print(result)
-                    if "Correcto" in result:
-                        break
-            elif game_choice == '3':
-                game = PiedraPapelTijeras()
-                user_choice = input("Elige Piedra, Papel o Tijeras: ").capitalize()
-                result, computer_choice = game.jugar(user_choice)
-                print(f"Computadora eligió: {computer_choice}. {result}")
-            elif game_choice == '4':
-                print("¡Gracias por jugar!")
-                break
-            else:
-                print("Opción inválida. Inténtalo de nuevo.")
+        messagebox.showinfo("Resultado", f"Tú elegiste {player}, la computadora eligió {computer}. {result}")
+
+
+class Buscaminas:
+    def __init__(self, root):
+        self.root = root
+        self.buttons = {}
+        self.mines = self.create_mines()
+
+        self.create_board()
+
+    def create_board(self):
+        for row in range(5):
+            for col in range(5):
+                button = tk.Button(self.root, width=3, height=1, command=lambda r=row, c=col: self.click(r, c))
+                button.grid(row=row, column=col)
+                self.buttons[(row, col)] = button
+
+    def create_mines(self):
+        return {(random.randint(0, 4), random.randint(0, 4)) for _ in range(5)}
+
+    def click(self, row, col):
+        if (row, col) in self.mines:
+            messagebox.showinfo("Buscaminas", "¡Has perdido!")
+            self.root.quit()
         else:
-            print("Opción inválida. Inténtalo de nuevo.")
-
-if _name_ == "_main_":
-    main()
+            self.buttons[(row, col)].config(text="0", state="disabled")

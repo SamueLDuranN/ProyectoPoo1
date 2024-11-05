@@ -1,81 +1,66 @@
+# interfaz.py
 import tkinter as tk
 from tkinter import messagebox
+from Juego import Triki, Serpiente, AdivinaNumero, PiedraPapelTijeras, Buscaminas
 
-# Definición de la clase Triki basada en la lógica del archivo
-class Triki:
-    def __init__(self):
-        self.turn = "X"
-        self.board = [["" for _ in range(3)] for _ in range(3)]
-
-    def mark_cell(self, i, j):
-        if self.board[i][j] == "":
-            self.board[i][j] = self.turn
-            if self.check_winner():
-                return f"¡{self.turn} ha ganado!"
-            elif self.check_draw():
-                return "¡Es un empate!"
-            else:
-                self.turn = "O" if self.turn == "X" else "X"
-                return f"Turno de: {self.turn}"
-        return "Celda ocupada."
-
-    def check_winner(self):
-        for i in range(3):
-            if self.board[i][0] == self.board[i][1] == self.board[i][2] != "":
-                return True
-            if self.board[0][i] == self.board[1][i] == self.board[2][i] != "":
-                return True
-        if self.board[0][0] == self.board[1][1] == self.board[2][2] != "":
-            return True
-        if self.board[0][2] == self.board[1][1] == self.board[2][0] != "":
-            return True
-        return False
-
-    def check_draw(self):
-        return all(self.board[i][j] != "" for i in range(3) for j in range(3))
-
-    def reset(self):
-        self.__init__()
-
-
-# Creación de la interfaz gráfica con tkinter
-class TrikiApp:
+class CasinoGames:
     def __init__(self, root):
         self.root = root
-        self.root.title("Juego de Triki (Tic-Tac-Toe)")
-        self.game = Triki()
+        self.root.title("Casino Games")
+        self.root.geometry("600x600")
+        self.root.configure(bg="#2c3e50")
+        self.create_main_menu()
 
-        self.buttons = [[None for _ in range(3)] for _ in range(3)]
-        for i in range(3):
-            for j in range(3):
-                btn = tk.Button(self.root, text="", font=("Arial", 20), width=5, height=2,
-                                command=lambda i=i, j=j: self.mark_cell(i, j))
-                btn.grid(row=i, column=j)
-                self.buttons[i][j] = btn
+    def create_main_menu(self):
+        self.clear_frame()
+        title = tk.Label(self.root, text="¡Bienvenido al Casino de Juegos!", font=('Arial', 24, 'bold'), bg="#2c3e50", fg="#ecf0f1")
+        title.pack(pady=20)
 
-        self.reset_button = tk.Button(self.root, text="Reiniciar", command=self.reset_game)
-        self.reset_button.grid(row=3, column=0, columnspan=3)
+        button_style = {
+            'font': ('Arial', 16, 'bold'),
+            'width': 20,
+            'height': 2,
+            'bg': '#e74c3c',
+            'fg': '#ecf0f1',
+            'bd': 2,
+            'relief': 'raised'
+        }
 
-    def mark_cell(self, i, j):
-        result = self.game.mark_cell(i, j)
-        self.buttons[i][j].config(text=self.game.board[i][j])
+        tk.Button(self.root, text="Triki", **button_style, command=self.jugar_triki).pack(pady=10)
+        tk.Button(self.root, text="Serpiente", **button_style, command=self.jugar_serpiente).pack(pady=10)
+        tk.Button(self.root, text="Adivina el Número", **button_style, command=self.jugar_adivina).pack(pady=10)
+        tk.Button(self.root, text="Piedra, Papel o Tijeras", **button_style, command=self.jugar_piedra_papel).pack(pady=10)
+        tk.Button(self.root, text="Buscaminas", **button_style, command=self.jugar_buscaminas).pack(pady=10)
 
-        if "ganado" in result or "empate" in result:
-            messagebox.showinfo("Resultado", result)
-            self.reset_game()
-        elif result == "Celda ocupada.":
-            messagebox.showwarning("Advertencia", "Esta celda ya está ocupada.")
-        else:
-            self.root.title(result)
 
-    def reset_game(self):
-        self.game.reset()
-        for i in range(3):
-            for j in range(3):
-                self.buttons[i][j].config(text="")
-        self.root.title("Juego de Triki (Tic-Tac-Toe)")
+    def clear_frame(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-# Crear y ejecutar la aplicación
-root = tk.Tk()
-app = TrikiApp(root)
-root.mainloop()
+    def jugar_triki(self):
+        self.clear_frame()
+        Triki(self.root)
+
+    def jugar_serpiente(self):
+        self.clear_frame()
+        Serpiente(self.root)
+
+    def jugar_adivina(self):
+        self.clear_frame()
+        AdivinaNumero(self.root)
+
+    def jugar_piedra_papel(self):
+        self.clear_frame()
+        PiedraPapelTijeras(self.root)
+
+    def jugar_buscaminas(self):
+        self.clear_frame()
+        Buscaminas(self.root)
+
+
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = CasinoGames(root)
+    root.mainloop()
