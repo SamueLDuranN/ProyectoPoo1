@@ -1,7 +1,7 @@
-# juegos.py
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 import random
+
 
 
 class Triki:
@@ -52,11 +52,12 @@ class Triki:
 class Serpiente:
     def __init__(self, root):
         self.root = root
-        self.canvas = tk.Canvas(self.root, width=300, height=300, bg="black")
+        # Ampliación del tamaño de la cuadrícula a 500x500 píxeles
+        self.canvas = tk.Canvas(self.root, width=500, height=500, bg="black")
         self.canvas.pack()
 
         # Inicialización de la serpiente
-        self.snake = [(140, 140), (130, 140), (120, 140)]
+        self.snake = [(250, 250), (240, 250), (230, 250)]
         self.direction = 'Right'
 
         # Posición inicial de la comida
@@ -66,8 +67,9 @@ class Serpiente:
         self.root.bind("<KeyPress>", self.change_direction)
 
     def create_food(self):
-        x = random.randint(0, 29) * 10
-        y = random.randint(0, 29) * 10
+        # Aseguramos que la comida esté en la cuadrícula de 10 píxeles en 500x500
+        x = random.randint(0, 49) * 10
+        y = random.randint(0, 49) * 10
         return (x, y)
 
     def change_direction(self, event):
@@ -97,7 +99,7 @@ class Serpiente:
         else:
             self.snake.pop()  # Quitar el último segmento de la serpiente
 
-        if (head_x < 0 or head_x >= 300 or head_y < 0 or head_y >= 300 or new_head in self.snake):
+        if (head_x < 0 or head_x >= 500 or head_y < 0 or head_y >= 500 or new_head in self.snake):
             messagebox.showinfo("Serpiente", "¡Perdiste!")
             self.root.quit()
             return
@@ -165,19 +167,20 @@ class Buscaminas:
     def __init__(self, root):
         self.root = root
         self.buttons = {}
-        self.mines = self.create_mines()
+        # Ampliación de la cuadrícula a 8x8 para más tamaño de juego
+        self.mines = self.create_mines(rows=8, cols=8)
 
-        self.create_board()
+        self.create_board(rows=8, cols=8)
 
-    def create_board(self):
-        for row in range(5):
-            for col in range(5):
+    def create_board(self, rows, cols):
+        for row in range(rows):
+            for col in range(cols):
                 button = tk.Button(self.root, width=3, height=1, command=lambda r=row, c=col: self.click(r, c))
                 button.grid(row=row, column=col)
                 self.buttons[(row, col)] = button
 
-    def create_mines(self):
-        return {(random.randint(0, 4), random.randint(0, 4)) for _ in range(5)}
+    def create_mines(self, rows, cols):
+        return {(random.randint(0, rows - 1), random.randint(0, cols - 1)) for _ in range(10)}
 
     def click(self, row, col):
         if (row, col) in self.mines:
