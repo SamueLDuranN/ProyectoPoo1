@@ -16,9 +16,9 @@ class InterfazJuegos:
         self.limpiar_ventana()
 
         # Encabezado
-        header = tk.Label(self.root, text="Bienvenido a la App de Juegos", font=('Helvetica', 18, 'bold'), bg="#333333",
-                          fg="#f0a500")
-        header.pack(pady=20)
+        encabezado = tk.Label(self.root, text="Bienvenido a la App de Juegos", font=('Helvetica', 18, 'bold'), bg="#333333",
+                              fg="#f0a500")
+        encabezado.pack(pady=20)
 
         # Botón de ingreso de nombre con estilo mejorado
         boton_nombre = tk.Button(self.root, text="Ingresar Nombre", command=self.ingresar_nombre,
@@ -35,9 +35,9 @@ class InterfazJuegos:
         self.limpiar_ventana()
 
         # Título del menú de juegos
-        label = tk.Label(self.root, text=f"Bienvenido, {self.jugador_nombre}. Selecciona un juego:",
-                         font=('Helvetica', 14, 'bold'), bg="#333333", fg="#f0a500")
-        label.pack(pady=20)
+        etiqueta = tk.Label(self.root, text=f"Bienvenido, {self.jugador_nombre}. Selecciona un juego:",
+                            font=('Helvetica', 14, 'bold'), bg="#333333", fg="#f0a500")
+        etiqueta.pack(pady=20)
 
         # Frame para el menú de juegos
         frame_juegos = tk.Frame(self.root, bg="#444444", bd=2, relief="sunken")
@@ -58,11 +58,11 @@ class InterfazJuegos:
                               command=lambda j=juego: self.iniciar_juego(j))
             boton.pack(pady=10, fill="x", padx=20)
 
-    def iniciar_juego(self, juego_clase):
-        # Limpiamos la ventana y verificamos que juego_clase no sea None
-        if juego_clase is not None:
+    def iniciar_juego(self, clase_juego):
+        # Limpiamos la ventana y verificamos que clase_juego no sea None
+        if clase_juego is not None:
             self.limpiar_ventana()
-            self.juego_actual = juego_clase(self.root, self.volver_a_jugar_o_menu)
+            self.juego_actual = clase_juego(self.root, self.volver_a_jugar_o_menu)
         else:
             messagebox.showerror("Error", "No se pudo iniciar el juego.")
 
@@ -81,8 +81,6 @@ class InterfazJuegos:
     def limpiar_ventana(self):
         for widget in self.root.winfo_children():
             widget.destroy()
-
-
 
 
 # Ejecución
