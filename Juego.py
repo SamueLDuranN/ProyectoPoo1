@@ -1,53 +1,57 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 import random
-
 class Triki:
     def __init__(self, root, callback_fin_juego):
         self.root = root
         self.callback_fin_juego = callback_fin_juego
-        self.turn = 'X'
-        self.board = ['' for _ in range(9)]
-        self.buttons = []
-        self.vs_computer = messagebox.askyesno("Triki", "¿Quieres jugar contra la computadora?")
-        self.create_board()
+        self.jugador_actual = "X"
+        self.tablero = [[None for _ in range(3)] for _ in range(3)]
+        self.crear_interfaz_triki()
 
-    def create_board(self):
-        frame = tk.Frame(self.root)
-        frame.pack(expand=True)
-        for i in range(9):
-            button = tk.Button(frame, text='', font=('Arial', 20), width=5, height=2,
-                               command=lambda i=i: self.on_click(i))
-            button.grid(row=i // 3, column=i % 3)
-            self.buttons.append(button)
+    def crear_interfaz_triki(self):
+        for i in range(3):
+            for j in range(3):
+                boton = tk.Button(
+                    self.root,
+                    text="",
+                    font=("Arial", 24, "bold"),
+                    width=5,
+                    height=2,
+                    bg="#dfe6e9",  # Color de fondo
+                    fg="#2d3436",  # Color de texto
+                    activebackground="#b2bec3",  # Fondo cuando se presiona
+                    relief="groove",
+                    bd=3,
+                    command=lambda i=i, j=j: self.marcar_casilla(i, j)
+                )
+                boton.grid(row=i, column=j, padx=5, pady=5)
+                self.tablero[i][j] = boton
 
-    def on_click(self, index):
-        if self.board[index] == '':
-            self.board[index] = self.turn
-            self.buttons[index].config(text=self.turn)
-            if self.check_winner():
-                messagebox.showinfo("Triki", f"¡El jugador {self.turn} ha ganado!")
+    def marcar_casilla(self, i, j):
+        if self.tablero[i][j]["text"] == "":
+            self.tablero[i][j]["text"] = self.jugador_actual
+            self.tablero[i][j]["fg"] = "#d63031" if self.jugador_actual == "X" else "#0984e3"
+            if self.verificar_ganador():
+                messagebox.showinfo("Juego terminado", f"¡{self.jugador_actual} gana!")
                 self.callback_fin_juego()
-            elif '' not in self.board:
-                messagebox.showinfo("Triki", "¡Es un empate!")
+            elif all(self.tablero[x][y]["text"] != "" for x in range(3) for y in range(3)):
+                messagebox.showinfo("Juego terminado", "¡Es un empate!")
                 self.callback_fin_juego()
             else:
-                self.turn = 'O' if self.turn == 'X' else 'X'
-                if self.vs_computer and self.turn == 'O':
-                    self.computer_move()
+                self.jugador_actual = "O" if self.jugador_actual == "X" else "X"
 
-    def computer_move(self):
-        empty_indices = [i for i, val in enumerate(self.board) if val == '']
-        index = random.choice(empty_indices)
-        self.on_click(index)
-
-    def check_winner(self):
-        winning_combinations = [(0, 1, 2), (3, 4, 5), (6, 7, 8),
-                                (0, 3, 6), (1, 4, 7), (2, 5, 8),
-                                (0, 4, 8), (2, 4, 6)]
-        for combo in winning_combinations:
-            if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != '':
+    def verificar_ganador(self):
+        # Comprobar filas, columnas y diagonales
+        for i in range(3):
+            if self.tablero[i][0]["text"] == self.tablero[i][1]["text"] == self.tablero[i][2]["text"] != "":
                 return True
+            if self.tablero[0][i]["text"] == self.tablero[1][i]["text"] == self.tablero[2][i]["text"] != "":
+                return True
+        if self.tablero[0][0]["text"] == self.tablero[1][1]["text"] == self.tablero[2][2]["text"] != "":
+            return True
+        if self.tablero[0][2]["text"] == self.tablero[1][1]["text"] == self.tablero[2][0]["text"] != "":
+            return True
         return False
 
 
@@ -55,13 +59,14 @@ class Serpiente:
     def __init__(self, root, callback_fin_juego):
         self.root = root
         self.callback_fin_juego = callback_fin_juego
-        self.canvas = tk.Canvas(self.root, bg="black", width=500, height=500)  # Valores por defecto
+        self.canvas = tk.Canvas(self.root, bg="black", width=500, height=500)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
         # Posición inicial de la serpiente
         self.snake = [(250, 250), (240, 250), (230, 250)]
         self.direction = 'Right'
-        self.food = None  # Inicializamos sin posición
+        self.food = None
+        self.root.update()  # Actualizamos la ventana para obtener el tamaño del canvas
         self.place_food()  # Colocamos la comida cuando el canvas esté configurado
 
         self.move_snake()
@@ -75,12 +80,17 @@ class Serpiente:
             self.place_food()
 
     def place_food(self):
-        # Definimos la posición de la comida asegurándonos de que esté dentro de los límites actuales
-        width = self.canvas.winfo_width() if self.canvas.winfo_width() > 0 else 500
-        height = self.canvas.winfo_height() if self.canvas.winfo_height() > 0 else 500
-        x = random.randint(0, (width // 10) - 1) * 10
-        y = random.randint(0, (height // 10) - 1) * 10
-        self.food = (x, y)
+        # Intentamos obtener el ancho y alto del canvas y colocar la comida solo si los valores son válidos
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
+
+        if width > 0 and height > 0:
+            x = random.randint(0, (width // 10) - 1) * 10
+            y = random.randint(0, (height // 10) - 1) * 10
+            self.food = (x, y)
+        else:
+            # Volvemos a llamar a place_food después de un pequeño retraso si el tamaño aún no está listo
+            self.root.after(100, self.place_food)
 
     def change_direction(self, event):
         new_direction = event.keysym
@@ -129,6 +139,7 @@ class Serpiente:
         self.canvas.create_oval(self.food[0], self.food[1], self.food[0] + 10, self.food[1] + 10, fill="red")
 
 
+
 class AdivinaNumero:
     def __init__(self, root, callback_fin_juego):
         self.root = root
@@ -158,33 +169,71 @@ class PiedraPapelTijeras:
     def __init__(self, root, callback_fin_juego):
         self.root = root
         self.callback_fin_juego = callback_fin_juego
-        self.options = ["Piedra", "Papel", "Tijeras"]
-        self.vs_computer = messagebox.askyesno("Piedra, Papel o Tijeras", "¿Quieres jugar contra la computadora?")
-        self.play_game()
+        self.crear_interfaz_piedra_papel_tijeras()
 
-    def play_game(self):
-        player_choice = simpledialog.askstring("Piedra, Papel o Tijeras", "Elige: Piedra, Papel o Tijeras")
-        if player_choice is None:
-            return
-        if self.vs_computer:
-            computer_choice = random.choice(self.options)
-            self.determine_winner(player_choice, computer_choice)
-        else:
-            opponent_choice = simpledialog.askstring("Piedra, Papel o Tijeras", "Jugador 2: Elige Piedra, Papel o Tijeras")
-            if opponent_choice:
-                self.determine_winner(player_choice, opponent_choice)
+    def crear_interfaz_piedra_papel_tijeras(self):
+        self.root.title("Piedra, Papel o Tijeras")
+        self.root.geometry("400x400")
+        self.root.config(bg="#b2bec3")
 
-    def determine_winner(self, player, opponent):
-        if player == opponent:
-            result = "Empate"
-        elif (player == "Piedra" and opponent == "Tijeras") or \
-                (player == "Papel" and opponent == "Piedra") or \
-                (player == "Tijeras" and opponent == "Papel"):
-            result = "Ganaste"
+        label = tk.Label(self.root, text="Piedra, Papel o Tijeras", font=("Arial", 18, "bold"), bg="#b2bec3", fg="#2d3436")
+        label.pack(pady=20)
+
+        self.boton_piedra = self.crear_boton("Piedra", "#e74c3c", self.jugar_piedra)
+        self.boton_piedra.pack(pady=10)
+
+        self.boton_papel = self.crear_boton("Papel", "#3498db", self.jugar_papel)
+        self.boton_papel.pack(pady=10)
+
+        self.boton_tijeras = self.crear_boton("Tijeras", "#2ecc71", self.jugar_tijeras)
+        self.boton_tijeras.pack(pady=10)
+
+    def crear_boton(self, texto, color, comando):
+        return tk.Button(
+            self.root,
+            text=texto,
+            font=("Arial", 14, "bold"),
+            width=15,
+            height=2,
+            bg=color,
+            fg="white",
+            activebackground="#95a5a6",
+            relief="raised",
+            bd=4,
+            command=comando
+        )
+
+    def jugar_piedra(self):
+        self.jugar("Piedra")
+
+    def jugar_papel(self):
+        self.jugar("Papel")
+
+    def jugar_tijeras(self):
+        self.jugar("Tijeras")
+
+    def jugar(self, eleccion_jugador):
+        opciones = ["Piedra", "Papel", "Tijeras"]
+        eleccion_computadora = random.choice(opciones)
+
+        resultado = self.determine_winner(eleccion_jugador, eleccion_computadora)
+        self.mostrar_resultado(eleccion_jugador, eleccion_computadora, resultado)
+
+    def determine_winner(self, eleccion_jugador, eleccion_computadora):
+        if eleccion_jugador == eleccion_computadora:
+            return "Empate"
+        elif (eleccion_jugador == "Piedra" and eleccion_computadora == "Tijeras") or \
+             (eleccion_jugador == "Papel" and eleccion_computadora == "Piedra") or \
+             (eleccion_jugador == "Tijeras" and eleccion_computadora == "Papel"):
+            return "Ganaste"
         else:
-            result = "Perdiste"
-        messagebox.showinfo("Resultado", f"El oponente eligió {opponent}. {result}.")
+            return "Perdiste"
+
+    def mostrar_resultado(self, eleccion_jugador, eleccion_computadora, resultado):
+        mensaje = f"Tú elegiste: {eleccion_jugador}\nLa computadora eligió: {eleccion_computadora}\n\n{resultado}!"
+        messagebox.showinfo("Resultado", mensaje)
         self.callback_fin_juego()
+
 
 
 class Buscaminas:
